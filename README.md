@@ -48,7 +48,7 @@ for easier and cleaner maintaining of dependencies.
 - Anonymous user page
 <img width="1920" height="920" alt="Incidents-anonymous-user_1" src="https://github.com/user-attachments/assets/8c3d59c0-0858-4ceb-9244-ee54b1b2be9c" />
 
-- Anonymouse user reports an incident via modal
+- Anonymous user reports an incident via modal
 <img width="1920" height="919" alt="Incidents-anonymous-user_2" src="https://github.com/user-attachments/assets/9e72cb6c-39c2-44c5-a153-9ebf8f2006f7" />
 
 - Result of successful reporting
