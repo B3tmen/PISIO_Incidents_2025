@@ -42,9 +42,23 @@ The following figure shows the use of aforementioned technologies and use of mic
 the client microservices, such as auth-service or incident-service, are organized in a multi-modular Spring project with a parent POM, 
 for easier and cleaner maintaining of dependencies.
 
-
+<img width="1195" height="897" alt="PISIO-struktura" src="https://github.com/user-attachments/assets/cf601852-00dd-4fd4-8075-88723ae7438f" />
 
 ## 📷 Screenshots
+- Anonymous user page
+<img width="1920" height="920" alt="Incidents-anonymous-user_1" src="https://github.com/user-attachments/assets/8c3d59c0-0858-4ceb-9244-ee54b1b2be9c" />
+
+- Anonymouse user reports an incident via modal
+<img width="1920" height="919" alt="Incidents-anonymous-user_2" src="https://github.com/user-attachments/assets/9e72cb6c-39c2-44c5-a153-9ebf8f2006f7" />
+
+- Result of successful reporting
+<img width="1920" height="99" alt="Incidents-anonymous-user_3" src="https://github.com/user-attachments/assets/5733e18b-6061-4634-be11-2756d4badcac" />
+
+- Moderator page and approval
+<img width="1920" height="918" alt="Incidents-moderator_1" src="https://github.com/user-attachments/assets/72ed2903-e04d-4f2f-98a8-67d52dc5640d" />
+
+- Interactive map for moderator
+<img width="1920" height="919" alt="Incidents-moderator_2" src="https://github.com/user-attachments/assets/9850b72f-fdfa-4cfd-a5c3-c0385ebba926" />
 
 
 
