@@ -1,0 +1,247 @@
+services:
+  # =================================== Infrastructure ===================================
+  # ---------------- Servers ----------------
+  mysql:
+    container_name: mysql-db
+    image: 'mysql'
+    ports:
+      - '3307:3306' # if 3306 is already taken on host machine, go to 3307
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ../database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    env_file:
+      - .env
+    networks:
+      - ms-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${MYSQL_ROOT_USERNAME}", "--password=${MYSQL_ROOT_PASSWORD}" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  zipkin:
+    container_name: zipkin-server
+    image: openzipkin/zipkin-slim
+    ports:
+      - '9411:9411'
+    networks:
+      - ms-network
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:4.1.3-management
+    ports:
+      - "5672:5672"     # Main client port
+      - "15672:15672"   # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - ms-network
+
+  hashicorp-vault:
+    container_name: hashicorp-vault
+    image: hashicorp/vault:latest
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - "8200:8200"
+    volumes:
+      - ./Vault/config.hcl:/vault/config/config.hcl
+      - vault_data:/vault/file
+    command:
+      - server
+    networks:
+      - ms-network
+#    healthcheck:
+#      test: [ "CMD", "curl", "-f", "http://hashicorp-vault:8200/v1/sys/health" ]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+
+  # ---------------- Infrastructure microservices ----------------
+  config-server:
+    container_name: config-server
+    build:
+      context: ./config-server
+      dockerfile: Dockerfile
+    ports:
+      - '9000:9000'
+    depends_on:
+      mysql:
+        condition: service_healthy
+      hashicorp-vault:
+        condition: service_started
+    networks:
+      - ms-network
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      DISCOVERY_HOSTNAME: eureka-discovery
+      VAULT_URI: http://hashicorp-vault:8200
+    env_file:
+      - ./config-server/.env
+    healthcheck:
+      test: [ "CMD", "curl", "http://config-server:9000/config/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  eureka-discovery:
+    container_name: eureka-discovery
+    build:
+      context: ./discovery
+      dockerfile: Dockerfile
+    ports:
+      - '9001:9001'
+    depends_on:
+      config-server:
+        condition: service_healthy
+    networks:
+      - ms-network
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      CONFIG_URI: http://config-server:9000/config
+    healthcheck:
+      test: [ "CMD", "curl", "http://eureka-discovery:9001/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api-gateway:
+    container_name: api-gateway
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    ports:
+      - '9002:9002'
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka-discovery:
+        condition: service_healthy
+    networks:
+      - ms-network
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      CONFIG_URI: http://config-server:9000/config
+    env_file:
+      - ./gateway/.env
+
+  # =================================== Microservices ===================================
+  incident-service:
+    container_name: incident-service
+    build:
+      context: ./incident-microservices
+      dockerfile: ./incident-service/Dockerfile
+      # Disabling direct communication with microservices...
+#    ports:
+#      - '8080:8080'
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka-discovery:
+        condition: service_healthy
+    networks:
+      - ms-network
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${INCIDENT_DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${INCIDENT_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${INCIDENT_DB_PASSWORD}
+      CONFIG_URI: http://config-server:9000/config
+      VAULT_URI: http://hashicorp-vault:8200
+    env_file:
+      - ./incident-microservices/incident-service/.env
+
+  auth-service:
+    container_name: auth-service
+    build:
+      context: ./incident-microservices
+      dockerfile: ./auth-service/Dockerfile
+#    ports:
+#      - '8081:8081'
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka-discovery:
+        condition: service_healthy
+    networks:
+      - ms-network
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      CONFIG_URI: http://config-server:9000/config
+      VAULT_URI: http://hashicorp-vault:8200
+    env_file:
+      - ./incident-microservices/auth-service/.env
+
+  moderation-service:
+    container_name: moderation-service
+    build:
+      context: ./incident-microservices
+      dockerfile: ./moderation-service/Dockerfile
+#    ports:
+#      - '8082:8082'
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka-discovery:
+        condition: service_healthy
+    networks:
+      - ms-network
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MODERATION_DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${MODERATION_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MODERATION_DB_PASSWORD}
+      CONFIG_URI: http://config-server:9000/config
+      VAULT_URI: http://hashicorp-vault:8200
+    env_file:
+      - ./incident-microservices/moderation-service/.env
+
+  analytics-service:
+    container_name: analytics-service
+    build:
+      context: ./incident-microservices
+      dockerfile: ./analytics-service/Dockerfile
+#    ports:
+#      - '8083:8083'
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka-discovery:
+        condition: service_healthy
+    networks:
+      - ms-network
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${ANALYTICS_DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${ANALYTICS_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${ANALYTICS_DB_PASSWORD}
+      CONFIG_URI: http://config-server:9000/config
+      VAULT_URI: http://hashicorp-vault:8200
+
+  # =================================== Frontend ===================================
+  frontend:
+    container_name: incidents-frontend
+    build:
+      context: ../frontend/moderation-app
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+    volumes:
+      - ../frontend/moderation-app/src:/app/src
+    env_file:
+      - ../frontend/moderation-app/.env
+    depends_on:
+      - 'api-gateway'
+    networks:
+      - ms-network
+
+volumes:
+  mysql_data:
+  rabbitmq_data:
+  vault_data:
+
+networks:
+  ms-network:
+    driver: bridge

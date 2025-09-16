@@ -1,0 +1,30 @@
+server:
+  port: 8083
+
+eureka:
+  instance:
+    hostname: localhost
+    port: 9001
+  client:
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:${eureka.instance.port}/eureka
+
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/db_incident-analytics
+    username: root
+    password: toor
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+rabbitmq:
+  host: localhost
+  port: 5672
+  username: guest
+  password: guest
+  exchange: incident-exchange
+  queue-incident-created: incident-created-queue
+  routing-key-incident-created: incident.created

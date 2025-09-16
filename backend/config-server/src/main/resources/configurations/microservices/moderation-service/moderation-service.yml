@@ -1,0 +1,52 @@
+eureka:
+  instance:
+    hostname: localhost
+    port: 9001
+  client:
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:${eureka.instance.port}/eureka
+
+server:
+  port: 8082
+
+spring:
+  application:
+    name: moderation-service
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/db_moderation
+    username: root
+    password: toor
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database: mysql
+
+  cloud:
+    vault:
+      authentication: TOKEN
+      token: ${HASHICORP_VAULT_ROOT_TOKEN}
+      uri: http://localhost:8200
+      kv:
+        backend: secretsKV
+        default-context: pisio
+
+
+aws:
+  region: eu-central-1
+  bucket-name: pisio-incidents-aws-storage
+  credentials:
+    access-key-id: ${S3_BUCKET_ACCESS_KEY}
+    secret-access-key: ${S3_BUCKET_SECRET_KEY}
+
+rabbitmq:
+  host: localhost
+  port: 5672
+  username: guest
+  password: guest
+  exchange: incident-exchange
+  queue-incident-created: incident-created-queue
+  queue-status-updated: status-updated-queue
+  routing-key-incident-created: incident.created
+  routing-key-status-updated: incident.status.updated

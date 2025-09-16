@@ -1,0 +1,42 @@
+server:
+  port: 0
+
+eureka:
+  instance:
+    prefer-ip-address: true
+    hostname: ${spring.application.name}
+    instance-id: ${spring.application.name}:${random.uuid}
+  client:
+    service-url:
+      defaultZone: http://eureka-discovery:9001/eureka
+
+spring:
+  application:
+    name: moderation-service
+#  datasource:
+#    url: jdbc:mysql://mysql:3306/db_moderation   # URI will be for Docker (compose.yaml)
+#    username: root
+#    password: root
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database: mysql
+  cloud:
+    vault:
+      authentication: TOKEN
+      token: ${HASHICORP_VAULT_ROOT_TOKEN}
+      uri: http://hashicorp-vault:8200
+      kv:
+        backend: secretsKV
+        default-context: pisio
+
+rabbitmq:
+  host: rabbitmq
+  port: 5672
+  username: guest
+  password: guest
+  exchange: incident-exchange
+  queue-incident-created: incident-created-queue
+  queue-status-updated: status-updated-queue
+  routing-key-incident-created: incident.created
+  routing-key-status-updated: incident.status.updated

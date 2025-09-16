@@ -1,0 +1,9 @@
+# server config
+server:
+  port: 9001
+
+# eureka config
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false

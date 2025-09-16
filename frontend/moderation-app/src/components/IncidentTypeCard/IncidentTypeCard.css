@@ -1,0 +1,24 @@
+.container {
+    background-color: transparent;
+    border-radius: 10px;
+    border: 1px solid var(--color-silver);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    width: 90px;
+    height: auto;
+    cursor: pointer;
+    transition: 0.3s all ease-in-out;
+}
+
+.container:hover {
+    width: 110px;
+    height: auto;
+    background-color: var(--color-silver);
+}
+
+.container.selected {
+    background-color: var(--color-silver);
+}

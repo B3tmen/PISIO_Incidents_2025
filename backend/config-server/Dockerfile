@@ -1,0 +1,18 @@
+# --------- Step 1 - Build the app ---------
+FROM maven:3.9.11-eclipse-temurin-21 AS builder
+LABEL authors="Ivan"
+WORKDIR /app
+
+COPY . .
+RUN mvn clean package -DskipTests
+
+
+# --------- Step 2 - Run the app ---------
+FROM eclipse-temurin:21-jre-jammy
+WORKDIR /app
+
+EXPOSE 9000
+
+# Kopiranje JAR-a iz builder stage-a
+COPY --from=builder /app/target/config-server-*.jar config-server.jar
+ENTRYPOINT ["java", "-jar", "config-server.jar"]

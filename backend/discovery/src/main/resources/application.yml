@@ -1,0 +1,13 @@
+# server config
+spring:
+  application:
+    name: discovery
+  config:
+    import: optional:configserver:${CONFIG_URI:http://localhost:9000/config}  # For handling containerization and local development
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+         - health
